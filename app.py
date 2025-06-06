@@ -1,12 +1,13 @@
 import os
 import uuid
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from werkzeug.utils import secure_filename
 from PIL import Image
 import logging
 from config import Config
 from database import Database
+from auth import login_required, authenticate_admin, logout_admin, is_logged_in, get_admin_info
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -162,7 +163,30 @@ def search():
     """Advanced search page"""
     return render_template('search.html')
 
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    """Admin login page"""
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+
+        if authenticate_admin(username, password):
+            flash('Login realizado com sucesso!', 'success')
+            return redirect(url_for('admin'))
+        else:
+            flash('Credenciais inválidas!', 'error')
+
+    return render_template('admin_login.html')
+
+@app.route('/admin/logout')
+def admin_logout():
+    """Admin logout"""
+    logout_admin()
+    flash('Logout realizado com sucesso!', 'success')
+    return redirect(url_for('index'))
+
 @app.route('/admin')
+@login_required
 def admin():
     """Administration panel"""
     try:
@@ -173,13 +197,15 @@ def admin():
             'members_with_phone': len([m for m in members if m.get('phone')]),
             'recent_members': len([m for m in members if m.get('created_at', '').startswith('2025')]),
         }
-        return render_template('admin.html', stats=stats)
+        admin_info = get_admin_info()
+        return render_template('admin.html', stats=stats, admin_info=admin_info)
     except Exception as e:
         logger.error(f"Error loading admin panel: {str(e)}")
         flash('Erro ao carregar painel de administração.', 'error')
         return redirect(url_for('index'))
 
 @app.route('/api/admin/backup', methods=['POST'])
+@login_required
 def api_create_backup():
     """Create a new backup"""
     try:
@@ -192,6 +218,7 @@ def api_create_backup():
         return jsonify({'error': 'Erro ao criar backup'}), 500
 
 @app.route('/api/admin/backups')
+@login_required
 def api_list_backups():
     """List all backups"""
     try:
@@ -204,6 +231,7 @@ def api_list_backups():
         return jsonify({'error': 'Erro ao listar backups'}), 500
 
 @app.route('/api/admin/backup/<filename>', methods=['DELETE'])
+@login_required
 def api_delete_backup(filename):
     """Delete a specific backup"""
     try:
@@ -224,6 +252,7 @@ def api_delete_backup(filename):
         return jsonify({'error': 'Erro ao excluir backup'}), 500
 
 @app.route('/api/admin/cleanup', methods=['POST'])
+@login_required
 def api_cleanup_backups():
     """Cleanup old backups"""
     try:
@@ -236,6 +265,7 @@ def api_cleanup_backups():
         return jsonify({'error': 'Erro na limpeza de backups'}), 500
 
 @app.route('/api/admin/export')
+@login_required
 def api_export_data():
     """Export all data as JSON"""
     try:

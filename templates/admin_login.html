@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Login Administrativo - gnS (Genius){% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <div class="hero-icon mb-3">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h1 class="display-6 fw-bold text-primary mb-3">Acesso Administrativo</h1>
+                <p class="lead text-muted">
+                    Entre com suas credenciais para acessar o painel de administração
+                </p>
+            </div>
+
+            <!-- Login Form -->
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5">
+                    <form method="POST" action="{{ url_for('admin_login') }}" id="loginForm">
+                        <!-- Username Field -->
+                        <div class="mb-4">
+                            <label for="username" class="form-label fw-semibold">
+                                <i class="fas fa-user me-2 text-primary"></i>Usuário
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="username" name="username" 
+                                   placeholder="Digite seu usuário" required autocomplete="username">
+                        </div>
+
+                        <!-- Password Field -->
+                        <div class="mb-4">
+                            <label for="password" class="form-label fw-semibold">
+                                <i class="fas fa-lock me-2 text-primary"></i>Senha
+                            </label>
+                            <div class="input-group">
+                                <input type="password" class="form-control form-control-lg" id="password" name="password" 
+                                       placeholder="Digite sua senha" required autocomplete="current-password">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
+                                    <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Remember Me -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="rememberMe" name="remember_me">
+                                <label class="form-check-label" for="rememberMe">
+                                    Manter-me conectado
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg fw-semibold" id="loginBtn">
+                                <i class="fas fa-sign-in-alt me-2"></i>Entrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Security Notice -->
+            <div class="card border-warning mt-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x me-3"></i>
+                        <div>
+                            <h6 class="mb-1">Área Restrita</h6>
+                            <small class="text-muted">
+                                Este é o painel de administração do gnS (Genius). 
+                                Apenas administradores autorizados podem acessar esta área.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Default Credentials Info (Development Only) -->
+            {% if config.get('DEBUG') %}
+            <div class="card border-info mt-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-info-circle text-info fa-2x me-3"></i>
+                        <div>
+                            <h6 class="mb-1">Credenciais de Desenvolvimento</h6>
+                            <small class="text-muted">
+                                <strong>Usuário:</strong> admin<br>
+                                <strong>Senha:</strong> gns2025!<br>
+                                <em>Altere essas credenciais em produção!</em>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Back to Home -->
+            <div class="text-center mt-4">
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar ao Início
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function togglePassword() {
+    const passwordField = document.getElementById('password');
+    const toggleIcon = document.getElementById('passwordToggleIcon');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleIcon.className = 'fas fa-eye-slash';
+    } else {
+        passwordField.type = 'password';
+        toggleIcon.className = 'fas fa-eye';
+    }
+}
+
+// Form submission handling
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    const loginBtn = document.getElementById('loginBtn');
+    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Entrando...';
+    loginBtn.disabled = true;
+    
+    // Re-enable button after 10 seconds as fallback
+    setTimeout(() => {
+        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Entrar';
+        loginBtn.disabled = false;
+    }, 10000);
+});
+
+// Auto-focus on username field
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('username').focus();
+});
+
+// Handle Enter key in password field
+document.getElementById('password').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        document.getElementById('loginForm').submit();
+    }
+});
+
+// Security: Clear form on page unload
+window.addEventListener('beforeunload', function() {
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+});
+</script>
+{% endblock %}
