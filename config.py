@@ -6,7 +6,7 @@ load_dotenv()
 class Config:
     # Supabase configuration
     SUPABASE_URL = os.environ.get('SUPABASE_URL') or "https://orupwiygpnzibophlwpe.supabase.co"
-    SUPABASE_KEY = os.environ.get('SUPABASE_KEY') or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydXB3aXlncG56aWJvcGhsd3BlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxNjg5NDIsImV4cCI6MjA2NDc0NDk0Mn0.1f8QpGVX_PQ8XUa-bqUNI8HlpoNKPsL0EWKQ8rxBldw"
+    SUPABASE_KEY = os.environ.get('SUPABASE_KEY') or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ydXB3aXlncG56aWJvcGhsd3BlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTE2ODk0MiwiZXhwIjoyMDY0NzQ0OTQyfQ.if3LMxtMx5apkX5PVcUKUihCk8XmiBD9hoUQVvmMnW8"
 
     # Flask configuration
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
