@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastro - gnS (Genius){% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <div class="hero-icon mb-3">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <h1 class="display-5 fw-bold text-primary mb-3">Bem-vindo ao gnS!</h1>
+                <p class="lead text-muted">
+                    Cadastre-se para fazer parte do nosso diretório de membros e facilitar a identificação no jogo e no WhatsApp.
+                </p>
+            </div>
+
+            <!-- Registration Form -->
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-4 p-md-5">
+                    <form method="POST" action="{{ url_for('register') }}" enctype="multipart/form-data" id="registrationForm">
+                        <!-- Name Field -->
+                        <div class="mb-4">
+                            <label for="name" class="form-label fw-semibold">
+                                <i class="fas fa-user me-2 text-primary"></i>Nome Completo *
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="name" name="name" 
+                                   placeholder="Digite seu nome completo" required maxlength="255">
+                            <div class="form-text">Como você gostaria de ser chamado pelos outros membros</div>
+                        </div>
+
+                        <!-- Commander Name Field -->
+                        <div class="mb-4">
+                            <label for="commander_name" class="form-label fw-semibold">
+                                <i class="fas fa-gamepad me-2 text-primary"></i>Nome do Comandante *
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="commander_name" name="commander_name" 
+                                   placeholder="Seu nome no jogo" required maxlength="255">
+                            <div class="form-text">Seu nome de usuário/comandante dentro do jogo</div>
+                        </div>
+
+                        <!-- Phone Field -->
+                        <div class="mb-4">
+                            <label for="phone" class="form-label fw-semibold">
+                                <i class="fas fa-phone me-2 text-primary"></i>Telefone/WhatsApp
+                            </label>
+                            <input type="tel" class="form-control form-control-lg" id="phone" name="phone" 
+                                   placeholder="(11) 99999-9999" maxlength="20">
+                            <div class="form-text">Opcional - Para facilitar contato via WhatsApp</div>
+                        </div>
+
+                        <!-- Photo Upload Field -->
+                        <div class="mb-4">
+                            <label for="photo" class="form-label fw-semibold">
+                                <i class="fas fa-camera me-2 text-primary"></i>Foto de Perfil
+                            </label>
+                            <input type="file" class="form-control form-control-lg" id="photo" name="photo" 
+                                   accept="image/*" onchange="previewImage(this)">
+                            <div class="form-text">Opcional - Formatos aceitos: JPG, PNG, GIF, WEBP (máx. 16MB)</div>
+                            
+                            <!-- Image Preview -->
+                            <div id="imagePreview" class="mt-3" style="display: none;">
+                                <div class="text-center">
+                                    <img id="previewImg" src="" alt="Preview" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeImage()">
+                                            <i class="fas fa-trash me-1"></i>Remover
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg fw-semibold" id="submitBtn">
+                                <i class="fas fa-user-check me-2"></i>Cadastrar-se
+                            </button>
+                        </div>
+
+                        <!-- Info Text -->
+                        <div class="text-center mt-4">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Após o cadastro, você será redirecionado para o diretório de membros
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Access -->
+            <div class="text-center mt-4">
+                <a href="{{ url_for('directory') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-address-book me-2"></i>Ver Diretório de Membros
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function previewImage(input) {
+    const preview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removeImage() {
+    const photoInput = document.getElementById('photo');
+    const preview = document.getElementById('imagePreview');
+    
+    photoInput.value = '';
+    preview.style.display = 'none';
+}
+
+// Form validation
+document.getElementById('registrationForm').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cadastrando...';
+    submitBtn.disabled = true;
+});
+
+// Phone number formatting
+document.getElementById('phone').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length >= 11) {
+        value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    } else if (value.length >= 7) {
+        value = value.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+    } else if (value.length >= 3) {
+        value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+    }
+    e.target.value = value;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Diretório de Membros - gnS (Genius){% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <div class="hero-icon mb-3">
+            <i class="fas fa-address-book"></i>
+        </div>
+        <h1 class="display-5 fw-bold text-primary mb-3">Diretório de Membros</h1>
+        <p class="lead text-muted">
+            Conheça todos os membros do gnS (Genius) e seus comandantes no jogo
+        </p>
+    </div>
+
+    <!-- Stats -->
+    <div class="row mb-5">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white text-center">
+                <div class="card-body">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <h3 class="mb-0">{{ members|length }}</h3>
+                    <small>Membros Cadastrados</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white text-center">
+                <div class="card-body">
+                    <i class="fas fa-gamepad fa-2x mb-2"></i>
+                    <h3 class="mb-0">{{ members|selectattr('photo_filename')|list|length }}</h3>
+                    <small>Com Fotos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white text-center">
+                <div class="card-body">
+                    <i class="fas fa-phone fa-2x mb-2"></i>
+                    <h3 class="mb-0">{{ members|selectattr('phone')|list|length }}</h3>
+                    <small>Com WhatsApp</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" class="form-control" id="searchInput" 
+                       placeholder="Buscar por nome ou comandante...">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select class="form-select" id="filterSelect">
+                <option value="all">Todos os membros</option>
+                <option value="with-photo">Com foto</option>
+                <option value="with-phone">Com WhatsApp</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Members Grid -->
+    {% if members %}
+        <div class="row" id="membersGrid">
+            {% for member in members %}
+                <div class="col-lg-4 col-md-6 mb-4 member-card" 
+                     data-name="{{ member.name.lower() }}" 
+                     data-commander="{{ member.commander_name.lower() }}"
+                     data-has-photo="{{ 'true' if member.photo_filename else 'false' }}"
+                     data-has-phone="{{ 'true' if member.phone else 'false' }}">
+                    <div class="card h-100 shadow-sm border-0 member-item">
+                        <div class="card-body text-center p-4">
+                            <!-- Photo -->
+                            <div class="member-photo mb-3">
+                                {% if member.photo_filename %}
+                                    <img src="{{ url_for('static', filename='uploads/' + member.photo_filename) }}" 
+                                         alt="{{ member.name }}" 
+                                         class="rounded-circle img-fluid member-avatar"
+                                         style="width: 100px; height: 100px; object-fit: cover;">
+                                {% else %}
+                                    <div class="avatar-placeholder rounded-circle mx-auto d-flex align-items-center justify-content-center"
+                                         style="width: 100px; height: 100px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                        <i class="fas fa-user fa-2x text-white"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Name -->
+                            <h5 class="card-title fw-bold text-dark mb-2">{{ member.name }}</h5>
+
+                            <!-- Commander Name -->
+                            <div class="commander-name mb-3">
+                                <span class="badge bg-primary fs-6 px-3 py-2">
+                                    <i class="fas fa-gamepad me-1"></i>{{ member.commander_name }}
+                                </span>
+                            </div>
+
+                            <!-- Contact Info -->
+                            <div class="contact-info">
+                                {% if member.phone %}
+                                    <a href="https://wa.me/55{{ member.phone.replace('(', '').replace(')', '').replace(' ', '').replace('-', '') }}" 
+                                       target="_blank" 
+                                       class="btn btn-success btn-sm mb-2 w-100">
+                                        <i class="fab fa-whatsapp me-1"></i>WhatsApp
+                                    </a>
+                                {% else %}
+                                    <div class="text-muted small">
+                                        <i class="fas fa-phone-slash me-1"></i>WhatsApp não informado
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Member Since -->
+                            <div class="member-since mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Membro desde {{ member.created_at[:10] if member.created_at else 'N/A' }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- No Results Message -->
+        <div id="noResults" class="text-center py-5" style="display: none;">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">Nenhum membro encontrado</h4>
+            <p class="text-muted">Tente ajustar os filtros de busca</p>
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-5">
+            <i class="fas fa-users fa-4x text-muted mb-4"></i>
+            <h3 class="text-muted mb-3">Nenhum membro cadastrado ainda</h3>
+            <p class="text-muted mb-4">Seja o primeiro a se cadastrar no diretório!</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-user-plus me-2"></i>Cadastrar-se Agora
+            </a>
+        </div>
+    {% endif %}
+
+    <!-- Add Member Button -->
+    {% if members %}
+        <div class="text-center mt-5">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-user-plus me-2"></i>Adicionar Novo Membro
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Search and filter functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const filterSelect = document.getElementById('filterSelect');
+    const memberCards = document.querySelectorAll('.member-card');
+    const noResults = document.getElementById('noResults');
+
+    function filterMembers() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const filterValue = filterSelect.value;
+        let visibleCount = 0;
+
+        memberCards.forEach(card => {
+            const name = card.dataset.name;
+            const commander = card.dataset.commander;
+            const hasPhoto = card.dataset.hasPhoto === 'true';
+            const hasPhone = card.dataset.hasPhone === 'true';
+
+            // Search filter
+            const matchesSearch = name.includes(searchTerm) || commander.includes(searchTerm);
+
+            // Category filter
+            let matchesFilter = true;
+            if (filterValue === 'with-photo') {
+                matchesFilter = hasPhoto;
+            } else if (filterValue === 'with-phone') {
+                matchesFilter = hasPhone;
+            }
+
+            if (matchesSearch && matchesFilter) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Show/hide no results message
+        if (noResults) {
+            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+    }
+
+    searchInput.addEventListener('input', filterMembers);
+    filterSelect.addEventListener('change', filterMembers);
+});
+
+// Add hover effects
+document.querySelectorAll('.member-item').forEach(card => {
+    card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-5px)';
+        this.style.transition = 'transform 0.3s ease';
+    });
+
+    card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+    });
+});
+</script>
+{% endblock %}
