@@ -1,5 +1,6 @@
 import os
 import uuid
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from werkzeug.utils import secure_filename
 from PIL import Image
@@ -124,6 +125,135 @@ def api_members():
     except Exception as e:
         logger.error(f"Error in API members: {str(e)}")
         return jsonify({'error': 'Erro ao carregar membros'}), 500
+
+@app.route('/api/stats')
+def api_stats():
+    """API endpoint to get member statistics"""
+    try:
+        members = db.get_all_members()
+        stats = {
+            'total_members': len(members),
+            'members_with_photos': len([m for m in members if m.get('photo_filename')]),
+            'members_with_phone': len([m for m in members if m.get('phone')]),
+            'recent_members': len([m for m in members if m.get('created_at', '').startswith('2025')]),
+            'latest_member': members[0] if members else None
+        }
+        return jsonify(stats)
+    except Exception as e:
+        logger.error(f"Error in API stats: {str(e)}")
+        return jsonify({'error': 'Erro ao carregar estatísticas'}), 500
+
+@app.route('/member/<member_id>')
+def member_profile(member_id):
+    """Individual member profile page"""
+    try:
+        member = db.get_member_by_id(member_id)
+        if not member:
+            flash('Membro não encontrado!', 'error')
+            return redirect(url_for('directory'))
+        return render_template('member_profile.html', member=member)
+    except Exception as e:
+        logger.error(f"Error loading member profile: {str(e)}")
+        flash('Erro ao carregar perfil do membro.', 'error')
+        return redirect(url_for('directory'))
+
+@app.route('/search')
+def search():
+    """Advanced search page"""
+    return render_template('search.html')
+
+@app.route('/admin')
+def admin():
+    """Administration panel"""
+    try:
+        members = db.get_all_members()
+        stats = {
+            'total_members': len(members),
+            'members_with_photos': len([m for m in members if m.get('photo_filename')]),
+            'members_with_phone': len([m for m in members if m.get('phone')]),
+            'recent_members': len([m for m in members if m.get('created_at', '').startswith('2025')]),
+        }
+        return render_template('admin.html', stats=stats)
+    except Exception as e:
+        logger.error(f"Error loading admin panel: {str(e)}")
+        flash('Erro ao carregar painel de administração.', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/api/admin/backup', methods=['POST'])
+def api_create_backup():
+    """Create a new backup"""
+    try:
+        from backup import BackupManager
+        backup_manager = BackupManager()
+        backup_path = backup_manager.create_backup()
+        return jsonify({'success': True, 'backup_path': backup_path})
+    except Exception as e:
+        logger.error(f"Error creating backup: {str(e)}")
+        return jsonify({'error': 'Erro ao criar backup'}), 500
+
+@app.route('/api/admin/backups')
+def api_list_backups():
+    """List all backups"""
+    try:
+        from backup import BackupManager
+        backup_manager = BackupManager()
+        backups = backup_manager.list_backups()
+        return jsonify(backups)
+    except Exception as e:
+        logger.error(f"Error listing backups: {str(e)}")
+        return jsonify({'error': 'Erro ao listar backups'}), 500
+
+@app.route('/api/admin/backup/<filename>', methods=['DELETE'])
+def api_delete_backup(filename):
+    """Delete a specific backup"""
+    try:
+        import os
+        from backup import BackupManager
+        backup_manager = BackupManager()
+        backup_path = os.path.join(backup_manager.backup_dir, filename)
+
+        if os.path.exists(backup_path) and filename.startswith('gns_backup_'):
+            os.remove(backup_path)
+            logger.info(f"Backup deleted: {filename}")
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Backup não encontrado'}), 404
+
+    except Exception as e:
+        logger.error(f"Error deleting backup: {str(e)}")
+        return jsonify({'error': 'Erro ao excluir backup'}), 500
+
+@app.route('/api/admin/cleanup', methods=['POST'])
+def api_cleanup_backups():
+    """Cleanup old backups"""
+    try:
+        from backup import BackupManager
+        backup_manager = BackupManager()
+        backup_manager.cleanup_old_backups(keep_count=10)
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error cleaning up backups: {str(e)}")
+        return jsonify({'error': 'Erro na limpeza de backups'}), 500
+
+@app.route('/api/admin/export')
+def api_export_data():
+    """Export all data as JSON"""
+    try:
+        members = db.get_all_members()
+        export_data = {
+            'export_date': datetime.now().isoformat(),
+            'version': '1.0',
+            'total_members': len(members),
+            'members': members
+        }
+
+        response = jsonify(export_data)
+        response.headers['Content-Disposition'] = f'attachment; filename=gns_export_{datetime.now().strftime("%Y%m%d")}.json'
+        return response
+
+    except Exception as e:
+        logger.error(f"Error exporting data: {str(e)}")
+        return jsonify({'error': 'Erro ao exportar dados'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

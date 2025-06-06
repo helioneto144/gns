@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+
+{% block title %}Administração - gnS (Genius){% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <div class="hero-icon mb-3">
+            <i class="fas fa-cogs"></i>
+        </div>
+        <h1 class="display-5 fw-bold text-primary mb-3">Painel de Administração</h1>
+        <p class="lead text-muted">
+            Gerencie backups, estatísticas e configurações do sistema
+        </p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-5">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card bg-primary text-white text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-users fa-3x mb-3"></i>
+                    <h3 class="mb-0" id="totalMembers">{{ stats.total_members }}</h3>
+                    <small>Total de Membros</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card bg-success text-white text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-camera fa-3x mb-3"></i>
+                    <h3 class="mb-0" id="membersWithPhotos">{{ stats.members_with_photos }}</h3>
+                    <small>Com Fotos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card bg-info text-white text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-phone fa-3x mb-3"></i>
+                    <h3 class="mb-0" id="membersWithPhone">{{ stats.members_with_phone }}</h3>
+                    <small>Com WhatsApp</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card bg-warning text-white text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-clock fa-3x mb-3"></i>
+                    <h3 class="mb-0" id="recentMembers">{{ stats.recent_members }}</h3>
+                    <small>Novos (2025)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Sections -->
+    <div class="row">
+        <!-- Backup Management -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow border-0 h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-database me-2"></i>Gerenciamento de Backup
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2 mb-4">
+                        <button class="btn btn-success" onclick="createBackup()">
+                            <i class="fas fa-plus me-2"></i>Criar Backup
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="loadBackupList()">
+                            <i class="fas fa-list me-2"></i>Listar Backups
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="cleanupBackups()">
+                            <i class="fas fa-broom me-2"></i>Limpar Backups Antigos
+                        </button>
+                    </div>
+
+                    <!-- Backup List -->
+                    <div id="backupList" style="display: none;">
+                        <h6 class="text-muted mb-3">Backups Disponíveis:</h6>
+                        <div id="backupItems" class="list-group">
+                            <!-- Backup items will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Backup Stats -->
+                    <div id="backupStats" class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Clique em "Listar Backups" para ver estatísticas
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Information -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow border-0 h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Informações do Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <strong>Versão da Aplicação:</strong>
+                            <span class="badge bg-primary ms-2">gnS v1.0</span>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <strong>Banco de Dados:</strong>
+                            <span class="badge bg-success ms-2">JSON Local</span>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <strong>Último Backup:</strong>
+                            <span id="lastBackup" class="text-muted">Carregando...</span>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <strong>Espaço em Disco:</strong>
+                            <span id="diskSpace" class="text-muted">Calculando...</span>
+                        </div>
+                    </div>
+
+                    <!-- System Actions -->
+                    <div class="d-grid gap-2 mt-4">
+                        <button class="btn btn-outline-primary" onclick="refreshStats()">
+                            <i class="fas fa-sync me-2"></i>Atualizar Estatísticas
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="exportData()">
+                            <i class="fas fa-download me-2"></i>Exportar Dados
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow border-0">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Atividade Recente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="recentActivity">
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">Carregando atividade recente...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="text-center mt-5">
+        <a href="{{ url_for('directory') }}" class="btn btn-outline-primary me-3">
+            <i class="fas fa-address-book me-2"></i>Ver Diretório
+        </a>
+        <a href="{{ url_for('search') }}" class="btn btn-outline-info me-3">
+            <i class="fas fa-search me-2"></i>Busca Avançada
+        </a>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-success">
+            <i class="fas fa-user-plus me-2"></i>Novo Cadastro
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Load initial data
+document.addEventListener('DOMContentLoaded', function() {
+    refreshStats();
+    loadRecentActivity();
+});
+
+async function refreshStats() {
+    try {
+        const response = await fetch('/api/stats');
+        const stats = await response.json();
+        
+        document.getElementById('totalMembers').textContent = stats.total_members || 0;
+        document.getElementById('membersWithPhotos').textContent = stats.members_with_photos || 0;
+        document.getElementById('membersWithPhone').textContent = stats.members_with_phone || 0;
+        document.getElementById('recentMembers').textContent = stats.recent_members || 0;
+        
+        showToast('Estatísticas atualizadas!', 'success');
+    } catch (error) {
+        console.error('Error refreshing stats:', error);
+        showToast('Erro ao atualizar estatísticas', 'error');
+    }
+}
+
+async function createBackup() {
+    try {
+        showToast('Criando backup...', 'info');
+        const response = await fetch('/api/admin/backup', { method: 'POST' });
+        const result = await response.json();
+        
+        if (response.ok) {
+            showToast('Backup criado com sucesso!', 'success');
+            loadBackupList();
+        } else {
+            showToast(result.error || 'Erro ao criar backup', 'error');
+        }
+    } catch (error) {
+        console.error('Error creating backup:', error);
+        showToast('Erro ao criar backup', 'error');
+    }
+}
+
+async function loadBackupList() {
+    try {
+        const response = await fetch('/api/admin/backups');
+        const backups = await response.json();
+        
+        const backupList = document.getElementById('backupList');
+        const backupItems = document.getElementById('backupItems');
+        const backupStats = document.getElementById('backupStats');
+        
+        backupList.style.display = 'block';
+        
+        if (backups.length === 0) {
+            backupItems.innerHTML = '<div class="list-group-item text-muted">Nenhum backup encontrado</div>';
+        } else {
+            backupItems.innerHTML = backups.map(backup => `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${backup.filename}</strong><br>
+                        <small class="text-muted">${new Date(backup.created).toLocaleString('pt-BR')}</small>
+                    </div>
+                    <div>
+                        <span class="badge bg-secondary">${(backup.size / 1024 / 1024).toFixed(2)} MB</span>
+                        <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteBackup('${backup.filename}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Update stats
+        const totalSize = backups.reduce((sum, backup) => sum + backup.size, 0);
+        backupStats.innerHTML = `
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                ${backups.length} backup(s) • ${(totalSize / 1024 / 1024).toFixed(2)} MB total
+            </small>
+        `;
+        
+    } catch (error) {
+        console.error('Error loading backup list:', error);
+        showToast('Erro ao carregar lista de backups', 'error');
+    }
+}
+
+async function deleteBackup(filename) {
+    if (!confirm(`Tem certeza que deseja excluir o backup "${filename}"?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/admin/backup/${filename}`, { method: 'DELETE' });
+        const result = await response.json();
+        
+        if (response.ok) {
+            showToast('Backup excluído com sucesso!', 'success');
+            loadBackupList();
+        } else {
+            showToast(result.error || 'Erro ao excluir backup', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting backup:', error);
+        showToast('Erro ao excluir backup', 'error');
+    }
+}
+
+async function cleanupBackups() {
+    if (!confirm('Isso irá manter apenas os 10 backups mais recentes. Continuar?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/cleanup', { method: 'POST' });
+        const result = await response.json();
+        
+        if (response.ok) {
+            showToast('Limpeza de backups concluída!', 'success');
+            loadBackupList();
+        } else {
+            showToast(result.error || 'Erro na limpeza', 'error');
+        }
+    } catch (error) {
+        console.error('Error cleaning up backups:', error);
+        showToast('Erro na limpeza de backups', 'error');
+    }
+}
+
+async function exportData() {
+    try {
+        const response = await fetch('/api/admin/export');
+        const blob = await response.blob();
+        
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `gns_export_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showToast('Dados exportados com sucesso!', 'success');
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        showToast('Erro ao exportar dados', 'error');
+    }
+}
+
+async function loadRecentActivity() {
+    try {
+        const response = await fetch('/api/members');
+        const members = await response.json();
+        
+        const recentActivity = document.getElementById('recentActivity');
+        
+        if (members.length === 0) {
+            recentActivity.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-2x text-muted mb-3"></i>
+                    <p class="text-muted">Nenhuma atividade recente</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Show last 5 members
+        const recentMembers = members.slice(0, 5);
+        recentActivity.innerHTML = recentMembers.map(member => `
+            <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                <div class="me-3">
+                    ${member.photo_filename ? 
+                        `<img src="/static/uploads/${member.photo_filename}" 
+                             class="rounded-circle" 
+                             style="width: 40px; height: 40px; object-fit: cover;">` :
+                        `<div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" 
+                             style="width: 40px; height: 40px;">
+                            <i class="fas fa-user text-white"></i>
+                        </div>`
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <strong>${member.name}</strong> se cadastrou<br>
+                    <small class="text-muted">
+                        <i class="fas fa-gamepad me-1"></i>${member.commander_name} • 
+                        ${new Date(member.created_at).toLocaleString('pt-BR')}
+                    </small>
+                </div>
+                <div>
+                    <a href="/member/${member.id}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </div>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error loading recent activity:', error);
+        document.getElementById('recentActivity').innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-triangle fa-2x text-danger mb-3"></i>
+                <p class="text-danger">Erro ao carregar atividade recente</p>
+            </div>
+        `;
+    }
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+        ${message}
+    `;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        z-index: 9999;
+        animation: slideInRight 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        font-weight: 500;
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+</script>
+{% endblock %}

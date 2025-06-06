@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}Busca Avançada - gnS (Genius){% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <div class="hero-icon mb-3">
+            <i class="fas fa-search"></i>
+        </div>
+        <h1 class="display-5 fw-bold text-primary mb-3">Busca Avançada</h1>
+        <p class="lead text-muted">
+            Encontre membros específicos usando filtros detalhados
+        </p>
+    </div>
+
+    <!-- Advanced Search Form -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-4">
+                    <form id="advancedSearchForm">
+                        <div class="row">
+                            <!-- Name Search -->
+                            <div class="col-md-6 mb-3">
+                                <label for="searchName" class="form-label fw-semibold">
+                                    <i class="fas fa-user me-2 text-primary"></i>Nome
+                                </label>
+                                <input type="text" class="form-control" id="searchName" 
+                                       placeholder="Digite o nome...">
+                            </div>
+
+                            <!-- Commander Search -->
+                            <div class="col-md-6 mb-3">
+                                <label for="searchCommander" class="form-label fw-semibold">
+                                    <i class="fas fa-gamepad me-2 text-primary"></i>Nome do Comandante
+                                </label>
+                                <input type="text" class="form-control" id="searchCommander" 
+                                       placeholder="Digite o nome do comandante...">
+                            </div>
+
+                            <!-- Has Photo Filter -->
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-camera me-2 text-primary"></i>Foto
+                                </label>
+                                <select class="form-select" id="photoFilter">
+                                    <option value="">Todos</option>
+                                    <option value="with">Com foto</option>
+                                    <option value="without">Sem foto</option>
+                                </select>
+                            </div>
+
+                            <!-- Has Phone Filter -->
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-phone me-2 text-primary"></i>WhatsApp
+                                </label>
+                                <select class="form-select" id="phoneFilter">
+                                    <option value="">Todos</option>
+                                    <option value="with">Com WhatsApp</option>
+                                    <option value="without">Sem WhatsApp</option>
+                                </select>
+                            </div>
+
+                            <!-- Date Range -->
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-calendar me-2 text-primary"></i>Período de Cadastro
+                                </label>
+                                <select class="form-select" id="dateFilter">
+                                    <option value="">Todos</option>
+                                    <option value="today">Hoje</option>
+                                    <option value="week">Última semana</option>
+                                    <option value="month">Último mês</option>
+                                    <option value="year">Último ano</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Search Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-outline-secondary" onclick="clearSearch()">
+                                <i class="fas fa-eraser me-2"></i>Limpar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Buscar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Results -->
+    <div id="searchResults" class="mt-5" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="text-primary">
+                <i class="fas fa-search-plus me-2"></i>Resultados da Busca
+            </h3>
+            <span id="resultCount" class="badge bg-primary fs-6"></span>
+        </div>
+        
+        <div id="resultsContainer" class="row">
+            <!-- Results will be populated here -->
+        </div>
+
+        <!-- No Results -->
+        <div id="noSearchResults" class="text-center py-5" style="display: none;">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">Nenhum resultado encontrado</h4>
+            <p class="text-muted">Tente ajustar os critérios de busca</p>
+        </div>
+    </div>
+
+    <!-- Quick Access -->
+    <div class="text-center mt-5">
+        <a href="{{ url_for('directory') }}" class="btn btn-outline-primary me-3">
+            <i class="fas fa-address-book me-2"></i>Ver Todos os Membros
+        </a>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-success">
+            <i class="fas fa-user-plus me-2"></i>Cadastrar Novo Membro
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let allMembers = [];
+
+// Load all members on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadMembers();
+});
+
+async function loadMembers() {
+    try {
+        const response = await fetch('/api/members');
+        allMembers = await response.json();
+    } catch (error) {
+        console.error('Error loading members:', error);
+        showToast('Erro ao carregar membros', 'error');
+    }
+}
+
+// Handle search form submission
+document.getElementById('advancedSearchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    performSearch();
+});
+
+function performSearch() {
+    const searchName = document.getElementById('searchName').value.toLowerCase();
+    const searchCommander = document.getElementById('searchCommander').value.toLowerCase();
+    const photoFilter = document.getElementById('photoFilter').value;
+    const phoneFilter = document.getElementById('phoneFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+
+    let filteredMembers = allMembers.filter(member => {
+        // Name filter
+        if (searchName && !member.name.toLowerCase().includes(searchName)) {
+            return false;
+        }
+
+        // Commander filter
+        if (searchCommander && !member.commander_name.toLowerCase().includes(searchCommander)) {
+            return false;
+        }
+
+        // Photo filter
+        if (photoFilter === 'with' && !member.photo_filename) {
+            return false;
+        }
+        if (photoFilter === 'without' && member.photo_filename) {
+            return false;
+        }
+
+        // Phone filter
+        if (phoneFilter === 'with' && !member.phone) {
+            return false;
+        }
+        if (phoneFilter === 'without' && member.phone) {
+            return false;
+        }
+
+        // Date filter
+        if (dateFilter && member.created_at) {
+            const memberDate = new Date(member.created_at);
+            const now = new Date();
+            const diffTime = now - memberDate;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            switch (dateFilter) {
+                case 'today':
+                    if (diffDays > 1) return false;
+                    break;
+                case 'week':
+                    if (diffDays > 7) return false;
+                    break;
+                case 'month':
+                    if (diffDays > 30) return false;
+                    break;
+                case 'year':
+                    if (diffDays > 365) return false;
+                    break;
+            }
+        }
+
+        return true;
+    });
+
+    displayResults(filteredMembers);
+}
+
+function displayResults(members) {
+    const resultsContainer = document.getElementById('resultsContainer');
+    const searchResults = document.getElementById('searchResults');
+    const noResults = document.getElementById('noSearchResults');
+    const resultCount = document.getElementById('resultCount');
+
+    searchResults.style.display = 'block';
+    resultCount.textContent = `${members.length} resultado${members.length !== 1 ? 's' : ''}`;
+
+    if (members.length === 0) {
+        resultsContainer.innerHTML = '';
+        noResults.style.display = 'block';
+        return;
+    }
+
+    noResults.style.display = 'none';
+    
+    resultsContainer.innerHTML = members.map(member => `
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 shadow-sm border-0 member-item">
+                <div class="card-body text-center p-4">
+                    <!-- Photo -->
+                    <div class="member-photo mb-3">
+                        ${member.photo_filename ? 
+                            `<img src="/static/uploads/${member.photo_filename}" 
+                                 alt="${member.name}" 
+                                 class="rounded-circle img-fluid member-avatar"
+                                 style="width: 80px; height: 80px; object-fit: cover;">` :
+                            `<div class="avatar-placeholder rounded-circle mx-auto d-flex align-items-center justify-content-center"
+                                 style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <i class="fas fa-user fa-2x text-white"></i>
+                            </div>`
+                        }
+                    </div>
+
+                    <!-- Name -->
+                    <h6 class="card-title fw-bold text-dark mb-2">
+                        <a href="/member/${member.id}" class="text-decoration-none text-dark">
+                            ${member.name}
+                        </a>
+                    </h6>
+
+                    <!-- Commander Name -->
+                    <div class="commander-name mb-3">
+                        <span class="badge bg-primary px-3 py-2">
+                            <i class="fas fa-gamepad me-1"></i>${member.commander_name}
+                        </span>
+                    </div>
+
+                    <!-- Contact -->
+                    ${member.phone ? 
+                        `<a href="https://wa.me/55${member.phone.replace(/\D/g, '')}" 
+                           target="_blank" 
+                           class="btn btn-success btn-sm mb-2 w-100">
+                            <i class="fab fa-whatsapp me-1"></i>WhatsApp
+                        </a>` :
+                        `<div class="text-muted small mb-2">
+                            <i class="fas fa-phone-slash me-1"></i>WhatsApp não informado
+                        </div>`
+                    }
+
+                    <!-- View Profile -->
+                    <a href="/member/${member.id}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-user me-1"></i>Ver Perfil
+                    </a>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function clearSearch() {
+    document.getElementById('advancedSearchForm').reset();
+    document.getElementById('searchResults').style.display = 'none';
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+        ${message}
+    `;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#28a745' : '#dc3545'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        z-index: 9999;
+        animation: slideInRight 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+</script>
+{% endblock %}

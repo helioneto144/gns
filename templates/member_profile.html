@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}{{ member.name }} - gnS (Genius){% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Back Button -->
+            <div class="mb-4">
+                <a href="{{ url_for('directory') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar ao Diretório
+                </a>
+            </div>
+
+            <!-- Member Profile Card -->
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5">
+                    <div class="row">
+                        <!-- Photo Section -->
+                        <div class="col-md-4 text-center mb-4 mb-md-0">
+                            {% if member.photo_filename %}
+                                <img src="{{ url_for('static', filename='uploads/' + member.photo_filename) }}" 
+                                     alt="{{ member.name }}" 
+                                     class="rounded-circle img-fluid member-avatar-large shadow"
+                                     style="width: 200px; height: 200px; object-fit: cover;">
+                            {% else %}
+                                <div class="avatar-placeholder-large rounded-circle mx-auto d-flex align-items-center justify-content-center shadow"
+                                     style="width: 200px; height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                    <i class="fas fa-user fa-4x text-white"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Info Section -->
+                        <div class="col-md-8">
+                            <!-- Name -->
+                            <h1 class="display-6 fw-bold text-primary mb-3">{{ member.name }}</h1>
+
+                            <!-- Commander Name -->
+                            <div class="mb-4">
+                                <h5 class="text-muted mb-2">
+                                    <i class="fas fa-gamepad me-2"></i>Nome do Comandante
+                                </h5>
+                                <span class="badge bg-primary fs-5 px-4 py-3">{{ member.commander_name }}</span>
+                            </div>
+
+                            <!-- Contact Info -->
+                            <div class="mb-4">
+                                <h5 class="text-muted mb-3">
+                                    <i class="fas fa-phone me-2"></i>Contato
+                                </h5>
+                                {% if member.phone %}
+                                    <div class="d-grid gap-2 d-md-block">
+                                        <a href="https://wa.me/55{{ member.phone.replace('(', '').replace(')', '').replace(' ', '').replace('-', '') }}" 
+                                           target="_blank" 
+                                           class="btn btn-success btn-lg">
+                                            <i class="fab fa-whatsapp me-2"></i>{{ member.phone }}
+                                        </a>
+                                        <button class="btn btn-outline-secondary btn-lg" 
+                                                onclick="copyToClipboard('{{ member.phone }}')">
+                                            <i class="fas fa-copy me-2"></i>Copiar
+                                        </button>
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">
+                                        <i class="fas fa-phone-slash me-2"></i>WhatsApp não informado
+                                    </p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Member Since -->
+                            <div class="mb-4">
+                                <h5 class="text-muted mb-2">
+                                    <i class="fas fa-calendar me-2"></i>Membro desde
+                                </h5>
+                                <p class="fs-6">{{ member.created_at[:10] if member.created_at else 'N/A' }}</p>
+                            </div>
+
+                            <!-- Quick Actions -->
+                            <div class="d-grid gap-2 d-md-block">
+                                {% if member.phone %}
+                                    <a href="https://wa.me/55{{ member.phone.replace('(', '').replace(')', '').replace(' ', '').replace('-', '') }}?text=Olá {{ member.name }}! Vi seu perfil no diretório do gnS." 
+                                       target="_blank" 
+                                       class="btn btn-success">
+                                        <i class="fab fa-whatsapp me-2"></i>Enviar Mensagem
+                                    </a>
+                                {% endif %}
+                                <button class="btn btn-primary" onclick="shareProfile()">
+                                    <i class="fas fa-share me-2"></i>Compartilhar Perfil
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Info Card -->
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>Informações Adicionais
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>ID do Membro:</strong> <code>{{ member.id[:8] }}...</code></p>
+                            <p><strong>Status:</strong> <span class="badge bg-success">Ativo</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Última Atualização:</strong> {{ member.updated_at[:10] if member.updated_at else 'N/A' }}</p>
+                            <p><strong>Tipo de Perfil:</strong> 
+                                {% if member.photo_filename and member.phone %}
+                                    <span class="badge bg-primary">Completo</span>
+                                {% elif member.photo_filename %}
+                                    <span class="badge bg-info">Com Foto</span>
+                                {% elif member.phone %}
+                                    <span class="badge bg-warning">Com WhatsApp</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Básico</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success toast
+        showToast('Número copiado para a área de transferência!', 'success');
+    }).catch(function() {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showToast('Número copiado!', 'success');
+    });
+}
+
+function shareProfile() {
+    const url = window.location.href;
+    const title = '{{ member.name }} - gnS (Genius)';
+    const text = 'Confira o perfil de {{ member.name }} no diretório do gnS!';
+    
+    if (navigator.share) {
+        navigator.share({
+            title: title,
+            text: text,
+            url: url
+        });
+    } else {
+        // Fallback - copy URL to clipboard
+        copyToClipboard(url);
+        showToast('Link do perfil copiado!', 'info');
+    }
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+        ${message}
+    `;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#28a745' : '#17a2b8'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        z-index: 9999;
+        animation: slideInRight 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    .member-avatar-large {
+        transition: transform 0.3s ease;
+    }
+    
+    .member-avatar-large:hover {
+        transform: scale(1.05);
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}
